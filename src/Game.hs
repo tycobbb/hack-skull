@@ -1,4 +1,4 @@
-module Lib where
+module Game where
 
 -- internal
 import Utils
