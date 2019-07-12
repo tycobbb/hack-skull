@@ -1,6 +1,7 @@
 module Utils where
 
-{- operators -}
+{- impls -}
+{- impls/operators -}
 (|>) :: a -> (a -> b) -> b
 (|>) =
   flip ($)

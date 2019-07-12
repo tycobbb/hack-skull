@@ -11,35 +11,42 @@ data Vec2 = Vec2 {
 } deriving (Eq)
 
 {- values -}
--- the unit x-vector
+-- The unit x-vector
 ux :: Vec2
 ux = Vec2 1 0
 
--- the unit y-vector
+-- The unit y-vector
 uy :: Vec2
 uy = Vec2 0 1
 
 {- impls -}
--- produces a new vector assigning the x value
+-- Produces a new vector assigning the x-value
+--
+-- @param x The x-value to set on the vec
 setX :: Int -> Vec2 -> Vec2
-setX x vec=
-  Vec2 x (y vec)
+setX x vec =
+  vec { x = x }
 
--- produces a new vector assigning the y value
+-- Produces a new vector assigning the y-value
+--
+-- @param y The y-value to set on the vec
 setY :: Int -> Vec2 -> Vec2
 setY y vec =
-  Vec2 (x vec) y
+  vec { y = y }
 
--- transform both values of the vector
+-- Transform both values of the vector
+-- 
+-- @param fn The function to call on both components of the vec
 transform :: (Int -> Int) -> Vec2 -> Vec2
 transform fn vec =
   Vec2 (fn (x vec)) (fn (y vec))
 
--- numeric operators
+{- impls/operators -}
 instance Num Vec2 where
   left + right  = Vec2 ((x left) + (x right)) ((y left) + (y right))
   left - right  = Vec2 ((x left) - (x right)) ((y left) - (y right))
   left * right  = Vec2 ((x left) * (x right)) ((y left) * (y right))
+  negate        = transform negate
   abs           = transform abs
   signum        = transform signum
   fromInteger i = Vec2 (fromInteger i) (fromInteger i)

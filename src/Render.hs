@@ -45,6 +45,8 @@ render world =
 --
 -- @param top    The top tile layer; may be sparse
 -- @param bottom The bottom tile layer; must _not_ be sparse
+-- 
+-- @return A merged tile layer
 addLayer :: [Tile] -> [Tile] -> [Tile]
 addLayer [] [] = []
 addLayer [] (b1 : bot) = b1 : addLayer [] bot
