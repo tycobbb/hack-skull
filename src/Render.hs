@@ -16,12 +16,6 @@ data Tile = Tile {
 }
 
 {- values -}
-hwall :: V.Vec2 -> Tile
-hwall = Tile '-'
-
-vwall :: V.Vec2 -> Tile
-vwall = Tile '|'
-
 floor :: V.Vec2 -> Tile
 floor = Tile '.'
 
@@ -34,8 +28,8 @@ human = Tile '@'
 -- @param world The world to render
 render :: W.World -> String
 render world =
-  drawRoom (W.room world)
-    |> addLayer (drawPlayer (W.player world))
+  drawGround (world#W.ground)
+    |> addLayer (drawPlayer (world#W.player))
     |> map glyph
     |> Split.chunksOf 4
     |> unlines
@@ -45,7 +39,7 @@ render world =
 --
 -- @param top    The top tile layer; may be sparse
 -- @param bottom The bottom tile layer; must _not_ be sparse
--- 
+--
 -- @return A merged tile layer
 addLayer :: [Tile] -> [Tile] -> [Tile]
 addLayer [] [] = []
@@ -56,41 +50,27 @@ addLayer (t1 : top) (b1 : bot)
   | null top         = b1 : addLayer [t1] bot
   | otherwise        = b1 : addLayer top bot
 
--- Draws a room
-drawRoom :: W.Room -> [Tile]
-drawRoom room =
-  drawRoom' [] (W.bounds room)
+-- Draws the ground
+drawGround :: W.Ground -> [Tile]
+drawGround ground =
+  drawGround' [] (ground#W.size)
 
-drawRoom' :: [Tile] -> V.Vec2 -> [Tile]
-drawRoom' memo pos
-  -- top
-  | V.y pos == 1 = (drawRoomExterior (V.setY 0 pos)) ++ memo
-  -- bottom
-  | null memo    = drawRoom' (drawRoomExterior (pos - V.uy)) (pos - V.uy)
-  -- middle
-  | otherwise    = drawRoom' ((drawRoomInterior (pos - V.uy)) ++ memo) (pos - V.uy)
+drawGround' :: [Tile] -> V.Vec2 -> [Tile]
+drawGround' memo pos
+  | V.y pos == 1 = drawGroundRow (pos - V.uy) ++ memo
+  | otherwise    = drawGround' ((drawGroundRow (pos - V.uy)) ++ memo) (pos - V.uy)
 
--- Draws a room's top/bottom rows
-drawRoomExterior :: V.Vec2 -> [Tile]
-drawRoomExterior pos =
-  [0..(V.x pos)-1]
-    |> map (\x -> hwall (V.setX x pos))
+-- Draws a ground row
+drawGroundRow :: V.Vec2 -> [Tile]
+drawGroundRow =
+  drawGroundRow' []
 
--- Draws a room's inner rows
-drawRoomInterior :: V.Vec2 -> [Tile]
-drawRoomInterior =
-  drawRoomInterior' []
-
-drawRoomInterior' :: [Tile] -> V.Vec2 -> [Tile]
-drawRoomInterior' memo pos
-  -- left
-  | V.x pos == 1 = (vwall (V.setX 0 pos)) : memo
-  -- right
-  | null memo    = drawRoomInterior' [vwall (pos - V.ux)] (pos - V.ux)
-  -- center
-  | otherwise    = drawRoomInterior' ((floor (pos - V.ux)) : memo) (pos - V.ux)
+drawGroundRow' :: [Tile] -> V.Vec2 -> [Tile]
+drawGroundRow' memo pos
+  | V.x pos == 1 = (floor (pos - V.ux)) : memo
+  | otherwise    = drawGroundRow' ((floor (pos - V.ux)) : memo) (pos - V.ux)
 
 -- Draws a player
 drawPlayer :: W.Actor -> [Tile]
 drawPlayer player =
-  [human (W.pos player)]
+  [human (player#W.pos)]

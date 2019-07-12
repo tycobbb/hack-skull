@@ -1,18 +1,19 @@
 module World where
 
 -- internal
+import Utils
 import qualified Vec as V
 
 {- types -}
 -- The game world.
 data World = World {
-  room   :: Room,
+  ground :: Ground,
   player :: Actor
 }
 
--- A room
-data Room = Room {
-  bounds :: V.Vec2
+-- A ground
+data Ground = Ground {
+  size :: V.Vec2
 }
 
 -- A movable actor
@@ -23,25 +24,29 @@ data Actor = Actor {
 {- impls -}
 -- Constructs a world with a valid initial state.
 init :: World
-init = 
+init =
   World {
-    room   = Room  (V.Vec2 4 4),
+    ground = Ground (V.Vec2 4 4),
     player = Actor (V.Vec2 1 1)
   }
 
 {- impls/commands -}
 -- Moves the player by the specified offset.
--- 
+--
 -- @param offset The delta to move the player by
 movePlayer :: V.Vec2 -> World -> World
 movePlayer offset world =
-  world {
-    player = moveActor offset (player world)
-  }
+  let
+    moved = moveActor offset (world#player)
+  in
+    if V.contains (moved#pos) (world#ground#size) then
+      world { player = moved }
+    else
+      world
 
 moveActor :: V.Vec2 -> Actor -> Actor
 moveActor offset actor =
   actor {
-    pos = (pos actor) + offset
+    pos = (actor#pos) + offset
   }
 

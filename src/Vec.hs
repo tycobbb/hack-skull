@@ -8,7 +8,7 @@ import Utils
 data Vec2 = Vec2 {
   x :: Int,
   y :: Int
-} deriving (Eq)
+} deriving (Eq, Show)
 
 {- values -}
 -- The unit x-vector
@@ -20,6 +20,7 @@ uy :: Vec2
 uy = Vec2 0 1
 
 {- impls -}
+{- impls/commands -}
 -- Produces a new vector assigning the x-value
 --
 -- @param x The x-value to set on the vec
@@ -39,13 +40,21 @@ setY y vec =
 -- @param fn The function to call on both components of the vec
 transform :: (Int -> Int) -> Vec2 -> Vec2
 transform fn vec =
-  Vec2 (fn (x vec)) (fn (y vec))
+  Vec2 (fn (vec#x)) (fn (vec#y))
+
+{- impls/queries -}
+contains :: Vec2 -> Vec2 -> Bool
+contains point bounds =
+  (point#x) >= 0 &&
+  (point#x) < (bounds#x) &&
+  (point#y) >= 0 &&
+  (point#y) < (bounds#y)
 
 {- impls/operators -}
 instance Num Vec2 where
-  left + right  = Vec2 ((x left) + (x right)) ((y left) + (y right))
-  left - right  = Vec2 ((x left) - (x right)) ((y left) - (y right))
-  left * right  = Vec2 ((x left) * (x right)) ((y left) * (y right))
+  left + right  = Vec2 ((left#x) + (right#x)) ((left#y) + (right#y))
+  left - right  = Vec2 ((left#x) - (right#x)) ((left#y) - (right#y))
+  left * right  = Vec2 ((left#x) * (right#x)) ((left#y) * (right#y))
   negate        = transform negate
   abs           = transform abs
   signum        = transform signum

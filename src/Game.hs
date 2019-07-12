@@ -56,7 +56,7 @@ update action game =
 updateWorld :: (W.World -> W.World) -> Game -> Game
 updateWorld fn game =
   game {
-    world = fn (world game)
+    world = fn (game#world)
   }
 
 -- Renders the game to string

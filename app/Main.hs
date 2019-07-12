@@ -17,13 +17,14 @@ main = do
 loop :: Game.Game -> IO ()
 loop game = do
   clearScreen
-  action <- IO.getChar
-    |> fmap decodeAction 
-  let next = Game.update action game
-  next
+  game
     |> Game.render
     |> IO.putStr
-  loop next
+  action <- IO.getChar
+    |> fmap decodeAction 
+  game
+    |> Game.update action
+    |> loop
 
 clearScreen :: IO ()
 clearScreen =
