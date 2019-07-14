@@ -1,4 +1,4 @@
-module Render where
+module Cli.View where
 
 -- external
 import Prelude hiding (floor)
@@ -6,8 +6,9 @@ import qualified Data.List.Split as Split
 
 -- internal
 import Utils
-import qualified Vec as V
-import qualified World as W
+import qualified Game as G
+import qualified Game.Vec as V
+import qualified Game.World as W
 
 {- types -}
 data Tile = Tile {
@@ -23,11 +24,23 @@ human :: V.Vec2 -> Tile
 human = Tile '@'
 
 {- impls -}
--- Renders a world to string
+-- Renders the game to string
+--
+-- @param game The game to render
+render :: G.Game -> IO ()
+render game = do
+  -- reset screen
+  putStr "\ESC[H\ESC[2J"
+  -- render world
+  (game#G.world)
+    |> renderWorld
+    |> putStr
+
+-- Renders the world to string
 --
 -- @param world The world to render
-render :: W.World -> String
-render world =
+renderWorld :: W.World -> String
+renderWorld world =
   drawGround (world#W.ground)
     |> addLayer (drawPlayer (world#W.player))
     |> map glyph

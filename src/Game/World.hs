@@ -1,8 +1,8 @@
-module World where
+module Game.World where
 
 -- internal
 import Utils
-import qualified Vec as V
+import qualified Game.Vec as V
 
 {- types -}
 -- The game world.
@@ -49,4 +49,3 @@ moveActor offset actor =
   actor {
     pos = (actor#pos) + offset
   }
-

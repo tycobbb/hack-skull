@@ -1,4 +1,4 @@
-module Vec where
+module Game.Vec where
 
 -- internal
 import Utils
@@ -21,22 +21,8 @@ uy = Vec2 0 1
 
 {- impls -}
 {- impls/commands -}
--- Produces a new vector assigning the x-value
---
--- @param x The x-value to set on the vec
-setX :: Int -> Vec2 -> Vec2
-setX x vec =
-  vec { x = x }
-
--- Produces a new vector assigning the y-value
---
--- @param y The y-value to set on the vec
-setY :: Int -> Vec2 -> Vec2
-setY y vec =
-  vec { y = y }
-
 -- Transform both values of the vector
--- 
+--
 -- @param fn The function to call on both components of the vec
 transform :: (Int -> Int) -> Vec2 -> Vec2
 transform fn vec =

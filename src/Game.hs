@@ -2,9 +2,8 @@ module Game where
 
 -- internal
 import Utils
-import qualified Render
-import qualified World as W
-import qualified Vec as V
+import qualified Game.World as W
+import qualified Game.Vec as V
 
 {- types -}
 -- The game world.
@@ -12,19 +11,18 @@ data Game = Game {
   world :: W.World
 }
 
-data Action 
+data Action
   = MoveUp
   | MoveDown
   | MoveLeft
   | MoveRight
-  | Unknown
 
 {- impls -}
 -- Initializes the game
 --
 -- @returns The initial game state.
 init :: Game
-init = 
+init =
   Game {
     world = W.init
   }
@@ -38,31 +36,21 @@ init =
 update :: Action -> Game -> Game
 update action game =
   case action of
-    MoveUp -> 
+    MoveUp ->
       game
         |> updateWorld (W.movePlayer (-V.uy))
-    MoveDown -> 
+    MoveDown ->
       game
         |> updateWorld (W.movePlayer V.uy)
-    MoveLeft -> 
+    MoveLeft ->
       game
         |> updateWorld (W.movePlayer (-V.ux))
-    MoveRight -> 
+    MoveRight ->
       game
         |> updateWorld (W.movePlayer V.ux)
-    Unknown -> 
-      game
 
 updateWorld :: (W.World -> W.World) -> Game -> Game
 updateWorld fn game =
   game {
     world = fn (game#world)
   }
-
--- Renders the game to string
---
--- @param game The game to render
-render :: Game -> String
-render game =
-  world game
-    |> Render.render
