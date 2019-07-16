@@ -29,12 +29,18 @@ transform fn vec =
   Vec2 (fn (vec#x)) (fn (vec#y))
 
 {- impls/queries -}
+-- Calculates the magnitude of the vector.
+mag :: Vec2 -> Int
+mag vec =
+  (vec#x) * (vec#y)
+
+-- Determines if the position vector is within the size.
 contains :: Vec2 -> Vec2 -> Bool
-contains point bounds =
-  (point#x) >= 0 &&
-  (point#x) < (bounds#x) &&
-  (point#y) >= 0 &&
-  (point#y) < (bounds#y)
+contains pos size =
+  (pos#x) >= 0 &&
+  (pos#x) < (size#x) &&
+  (pos#y) >= 0 &&
+  (pos#y) < (size#y)
 
 {- impls/operators -}
 instance Num Vec2 where

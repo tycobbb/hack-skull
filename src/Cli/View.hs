@@ -11,10 +11,10 @@ import qualified Game.Vec as V
 import qualified Game.World as W
 
 {- types -}
-data Tile = Tile {
-  glyph :: Char,
-  pos   :: V.Vec2
-}
+data Tile = Tile
+  { glyph :: Char
+  , pos   :: V.Vec2
+  }
 
 {- values -}
 floor :: V.Vec2 -> Tile
@@ -41,10 +41,10 @@ render game = do
 -- @param world The world to render
 renderWorld :: W.World -> String
 renderWorld world =
-  drawGround (world#W.ground)
+  drawGround (world#W.size)
     |> addLayer (drawPlayer (world#W.player))
     |> map glyph
-    |> Split.chunksOf 4
+    |> Split.chunksOf (world#W.size#V.x)
     |> unlines
 
 -- Merges two tile layers. The top tile layer will overwrite any tiles at a
@@ -64,9 +64,9 @@ addLayer (t1 : top) (b1 : bot)
   | otherwise        = b1 : addLayer top bot
 
 -- Draws the ground
-drawGround :: W.Ground -> [Tile]
-drawGround ground =
-  drawGround' [] (ground#W.size)
+drawGround :: V.Vec2 -> [Tile]
+drawGround size =
+  drawGround' [] size
 
 drawGround' :: [Tile] -> V.Vec2 -> [Tile]
 drawGround' memo pos
