@@ -1,27 +1,38 @@
 module Game.World where
 
+-- external
+import qualified System.Random as Random
+import Data.Vector (Vector)
+
 -- internal
 import Utils
 import qualified Game.Vec as V
+import Game.Vec (Vec2)
+import qualified Game.Level as L
+import Game.Level (Level)
 
 {- types -}
 -- The game world.
 data World = World
-  { size :: V.Vec2
+  { level  :: Level
   , player :: Actor
   }
 
 -- A movable actor
 data Actor = Actor
-  { pos :: V.Vec2
+  { pos :: Vec2
   }
 
 {- impls -}
 -- Constructs a world with a valid initial state.
-init :: World
-init =
+--
+-- @param gen A random generator
+--
+-- @return The initial world state
+init :: Random.StdGen -> World
+init gen =
   World
-  { size   = V.Vec2 30 20
+  { level  = L.init gen (V.Vec2 30 20)
   , player = Actor (V.Vec2 1 1)
   }
 
@@ -29,18 +40,23 @@ init =
 -- Moves the player by the specified offset.
 --
 -- @param offset The delta to move the player by
-movePlayer :: V.Vec2 -> World -> World
+movePlayer :: Vec2 -> World -> World
 movePlayer offset world =
   let
     moved = moveActor offset (world#player)
   in
-    if V.contains (moved#pos) (world#size) then
+    if V.contains (moved#pos) (world#level#L.size) then
       world { player = moved }
     else
       world
 
-moveActor :: V.Vec2 -> Actor -> Actor
+moveActor :: Vec2 -> Actor -> Actor
 moveActor offset actor =
   actor
   { pos = (actor#pos) + offset
   }
+
+{- impls/queries -}
+size :: World -> Vec2
+size =
+  L.size . level

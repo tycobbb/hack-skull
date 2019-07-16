@@ -2,6 +2,7 @@ module Cli where
 
 -- system
 import qualified System.IO as IO
+import qualified System.Random as Random
 
 -- internal
 import Utils
@@ -12,9 +13,14 @@ import qualified Game
 {- impls -}
 start :: IO ()
 start = do
+  -- enable raw input
   IO.hSetBuffering IO.stdin IO.NoBuffering
   IO.hSetEcho IO.stdin False
-  loop Game.init
+
+  -- start game loop
+  gen <- Random.getStdGen
+  Game.init gen
+    |> loop
 
 loop :: Game.Game -> IO ()
 loop game = do
@@ -34,5 +40,6 @@ loop game = do
     A.Unknown ->
       game
         |> loop
-    A.Quit ->
+    A.Quit -> do
+      V.reset
       return ()

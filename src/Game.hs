@@ -1,5 +1,8 @@
 module Game where
 
+-- external
+import qualified System.Random as Random
+
 -- internal
 import Utils
 import qualified Game.World as W
@@ -7,9 +10,10 @@ import qualified Game.Vec as V
 
 {- types -}
 -- The game world.
-data Game = Game {
-  world :: W.World
-}
+data Game = Game
+  { gen   :: Random.StdGen
+  , world :: W.World
+  }
 
 data Action
   = MoveUp
@@ -18,13 +22,16 @@ data Action
   | MoveRight
 
 {- impls -}
--- Initializes the game
+-- Initializes the game.
 --
--- @returns The initial game state.
-init :: Game
-init =
-  Game {
-    world = W.init
+-- @param gen A random generator
+--
+-- @returns The initial game state
+init :: Random.StdGen -> Game
+init gen =
+  Game
+  { gen   = gen
+  , world = W.init gen
   }
 
 -- Updates the game for a specific action.

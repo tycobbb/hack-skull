@@ -9,6 +9,8 @@ extra-source-files:
 dependencies:
 - base  >= 4.7 && < 5
 - split >= 0.2 && < 1
+- random >= 1.1 && < 2
+- vector >= 0.12 && < 1
 
 library:
   source-dirs: src

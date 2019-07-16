@@ -7,30 +7,44 @@ import qualified Data.List.Split as Split
 -- internal
 import Utils
 import qualified Game as G
+import Game (Game)
 import qualified Game.Vec as V
+import Game.Vec (Vec2)
 import qualified Game.World as W
+import Game.World (World, Actor)
+import qualified Game.Level as L
+import Game.Level (Level)
 
 {- types -}
 data Tile = Tile
   { glyph :: Char
-  , pos   :: V.Vec2
+  , pos   :: Vec2
   }
 
 {- values -}
-floor :: V.Vec2 -> Tile
+empty :: Vec2 -> Tile
+empty = Tile ' '
+
+floor :: Vec2 -> Tile
 floor = Tile '.'
 
-human :: V.Vec2 -> Tile
+human :: Vec2 -> Tile
 human = Tile '@'
 
 {- impls -}
--- Renders the game to string
+{- impls/commands -}
+-- Resets the screen.
+reset :: IO ()
+reset =
+  putStr "\ESC[H\ESC[2J"
+
+-- Renders the game to string.
 --
 -- @param game The game to render
-render :: G.Game -> IO ()
+render :: Game -> IO ()
 render game = do
   -- reset screen
-  putStr "\ESC[H\ESC[2J"
+  reset
   -- render world
   (game#G.world)
     |> renderWorld
@@ -39,9 +53,9 @@ render game = do
 -- Renders the world to string
 --
 -- @param world The world to render
-renderWorld :: W.World -> String
+renderWorld :: World -> String
 renderWorld world =
-  drawGround (world#W.size)
+  drawGround (world#W.level)
     |> addLayer (drawPlayer (world#W.player))
     |> map glyph
     |> Split.chunksOf (world#W.size#V.x)
@@ -64,26 +78,33 @@ addLayer (t1 : top) (b1 : bot)
   | otherwise        = b1 : addLayer top bot
 
 -- Draws the ground
-drawGround :: V.Vec2 -> [Tile]
-drawGround size =
-  drawGround' [] size
+drawGround :: Level -> [Tile]
+drawGround level =
+  drawGround' level (level#L.size) []
 
-drawGround' :: [Tile] -> V.Vec2 -> [Tile]
-drawGround' memo pos
-  | V.y pos == 1 = drawGroundRow (pos - V.uy) ++ memo
-  | otherwise    = drawGround' ((drawGroundRow (pos - V.uy)) ++ memo) (pos - V.uy)
+drawGround' :: Level -> Vec2 -> [Tile] -> [Tile]
+drawGround' level pos memo
+  | V.y pos == 1 = drawGroundRow level (pos - V.uy) ++ memo
+  | otherwise    = drawGround' level (pos - V.uy) ((drawGroundRow level (pos - V.uy)) ++ memo)
 
 -- Draws a ground row
-drawGroundRow :: V.Vec2 -> [Tile]
-drawGroundRow =
-  drawGroundRow' []
+drawGroundRow :: Level -> Vec2 -> [Tile]
+drawGroundRow level pos =
+  drawGroundRow' level pos []
 
-drawGroundRow' :: [Tile] -> V.Vec2 -> [Tile]
-drawGroundRow' memo pos
-  | V.x pos == 1 = (floor (pos - V.ux)) : memo
-  | otherwise    = drawGroundRow' ((floor (pos - V.ux)) : memo) (pos - V.ux)
+drawGroundRow' :: Level -> Vec2 -> [Tile] -> [Tile]
+drawGroundRow' level pos memo
+  | V.x pos == 1 = (drawGroundTile level (pos - V.ux)) : memo
+  | otherwise    = drawGroundRow' level (pos - V.ux) ((drawGroundTile level (pos - V.ux)) : memo)
+
+drawGroundTile :: Level -> Vec2 -> Tile
+drawGroundTile level pos =
+  if L.cell level pos then
+    floor pos
+  else
+    empty pos
 
 -- Draws a player
-drawPlayer :: W.Actor -> [Tile]
+drawPlayer :: Actor -> [Tile]
 drawPlayer player =
   [human (player#W.pos)]
