@@ -5,7 +5,7 @@ import qualified System.Random as Random
 import Data.Vector (Vector)
 
 -- internal
-import Utils
+import Core.Utils
 import qualified Game.Vec as V
 import Game.Vec (Vec2)
 import qualified Game.Level as L
@@ -29,10 +29,15 @@ data Actor = Actor
 -- @param gen A random generator
 --
 -- @return The initial world state
-init :: Random.StdGen -> World
+init :: Random.StdGen -> (World, Random.StdGen)
 init gen =
+  L.init gen (V.Vec2 30 20)
+    |> mapFst initWorld
+
+initWorld :: Level -> World
+initWorld level =
   World
-  { level  = L.init gen (V.Vec2 30 20)
+  { level = level
   , player = Actor (V.Vec2 1 1)
   }
 

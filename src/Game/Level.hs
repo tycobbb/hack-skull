@@ -7,7 +7,7 @@ import qualified Data.Vector as Vector
 import Data.Vector (Vector)
 
 -- internal
-import Utils
+import Core.Utils
 import qualified Game.Vec as Vec
 import Game.Vec (Vec2)
 
@@ -26,11 +26,10 @@ data Level = Level
 -- @param size The bounding size of the level
 --
 -- @return A new level
-init :: Random.StdGen -> Vec2 -> Level
+init :: Random.StdGen -> Vec2 -> (Level, Random.StdGen)
 init gen size =
   (seedGeneration gen size)
-    |> Level size
-    |> advanceGeneration size
+    |> advanceGeneration
 
 {- impls/queries -}
 -- Gets the cell at the vector position.
@@ -39,20 +38,18 @@ cell level pos =
   (level#grid) Vector.! (Vec.mag pos)
 
 {- impls/generation -}
-seedGeneration :: Random.StdGen -> Vec2 -> Vector Cell
+seedGeneration :: Random.StdGen -> Vec2 -> (Level, Random.StdGen)
 seedGeneration gen size =
   [0..Vec.mag size]
     |> foldr (\_ memo -> seedNextCell memo) ([], gen)
-    |> Tuple.fst
-    |> Vector.fromList
+    |> mapFst (Vector.fromList)
+    |> mapFst (Level size)
 
 seedNextCell :: ([Cell], Random.StdGen) -> ([Cell], Random.StdGen)
 seedNextCell (cells, gen) =
-  let
-    (nextCell, nextGen) = Random.random gen
-  in
-    (nextCell : cells, nextGen)
+  Random.random gen
+    |> mapFst (\cell -> cell : cells)
 
-advanceGeneration :: Vec2 -> Level -> Level
-advanceGeneration pos level =
+advanceGeneration :: (Level, Random.StdGen) -> (Level, Random.StdGen)
+advanceGeneration level =
   level

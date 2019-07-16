@@ -5,7 +5,7 @@ import Prelude hiding (floor)
 import qualified Data.List.Split as Split
 
 -- internal
-import Utils
+import Core.Utils
 import qualified Game as G
 import Game (Game)
 import qualified Game.Vec as V

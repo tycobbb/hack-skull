@@ -5,10 +5,11 @@ import qualified System.IO as IO
 import qualified System.Random as Random
 
 -- internal
-import Utils
+import Core.Utils
 import qualified Cli.View as V
 import qualified Cli.Action as A
-import qualified Game
+import qualified Game as G
+import Game (Game)
 
 {- impls -}
 start :: IO ()
@@ -19,13 +20,13 @@ start = do
 
   -- start game loop
   gen <- Random.getStdGen
-  Game.init gen
+  G.init gen
     |> loop
 
-loop :: Game.Game -> IO ()
+loop :: (Game.Game, Random.StdGen) -> IO ()
 loop game = do
   -- show view
-  V.render game
+  V.render (game#fst)
 
   -- get action from input
   action <- IO.getChar
@@ -35,7 +36,7 @@ loop game = do
   case action of
     A.Game action ->
       game
-        |> Game.update action
+        |> G.update action
         |> loop
     A.Unknown ->
       game
