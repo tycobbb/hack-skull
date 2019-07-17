@@ -1,10 +1,9 @@
 module Game where
 
--- external
-import qualified System.Random as Random
-
 -- internal
 import Core.Utils
+import qualified Core.Rand as R
+import Core.Rand (Rand, RandGen)
 import qualified Game.World as W
 import Game.World (World)
 import qualified Game.Vec as V
@@ -27,16 +26,10 @@ data Action
 -- @param gen A random generator
 --
 -- @returns The initial game state
-init :: Random.StdGen -> (Game, Random.StdGen)
+init :: RandGen -> Rand Game
 init gen =
   W.init gen
-    |> mapFst initGame
-
-initGame :: World -> Game
-initGame world =
-  Game
-  { world = world
-  }
+    |> R.map Game
 
 -- Updates the game for a specific action.
 --
@@ -44,24 +37,18 @@ initGame world =
 -- @param game   The current game state
 --
 -- @returns The next game state
-update :: Action -> (Game, Random.StdGen) -> (Game, Random.StdGen)
-update action game =
+update :: Action -> Rand Game -> Rand Game
+update action =
   case action of
     MoveUp ->
-      game
-        |> updateWorld (W.movePlayer (-V.uy))
+      updateWorld (W.movePlayer (-V.uy))
     MoveDown ->
-      game
-        |> updateWorld (W.movePlayer V.uy)
+      updateWorld (W.movePlayer V.uy)
     MoveLeft ->
-      game
-        |> updateWorld (W.movePlayer (-V.ux))
+      updateWorld (W.movePlayer (-V.ux))
     MoveRight ->
-      game
-        |> updateWorld (W.movePlayer V.ux)
+      updateWorld (W.movePlayer V.ux)
 
-updateWorld :: (W.World -> W.World) -> (Game, Random.StdGen) -> (Game, Random.StdGen)
-updateWorld fn (game, gen) =
-  (game {
-    world = fn (game#world)
-  }, gen)
+updateWorld :: (World -> World) -> Rand Game -> Rand Game
+updateWorld fn =
+  R.map (\game -> game { world = fn (game#world) })

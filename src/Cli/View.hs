@@ -58,7 +58,7 @@ renderWorld world =
   drawGround (world#W.level)
     |> addLayer (drawPlayer (world#W.player))
     |> map glyph
-    |> Split.chunksOf (world#W.size#V.x)
+    |> Split.chunksOf (world#W.width)
     |> unlines
 
 -- Merges two tile layers. The top tile layer will overwrite any tiles at a

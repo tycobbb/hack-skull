@@ -1,13 +1,14 @@
 module Game.Level where
 
 -- external
-import qualified System.Random as Random
 import qualified Data.Tuple as Tuple
 import qualified Data.Vector as Vector
 import Data.Vector (Vector)
 
 -- internal
 import Core.Utils
+import qualified Core.Rand as R
+import Core.Rand (Rand, RandGen)
 import qualified Game.Vec as Vec
 import Game.Vec (Vec2)
 
@@ -18,7 +19,6 @@ data Level = Level
   , grid :: Vector Cell
   }
 
-
 {- impls -}
 -- Initializes a level.
 --
@@ -26,7 +26,7 @@ data Level = Level
 -- @param size The bounding size of the level
 --
 -- @return A new level
-init :: Random.StdGen -> Vec2 -> (Level, Random.StdGen)
+init :: RandGen -> Vec2 -> Rand Level
 init gen size =
   (seedGeneration gen size)
     |> advanceGeneration
@@ -38,18 +38,12 @@ cell level pos =
   (level#grid) Vector.! (Vec.mag pos)
 
 {- impls/generation -}
-seedGeneration :: Random.StdGen -> Vec2 -> (Level, Random.StdGen)
+seedGeneration :: RandGen -> Vec2 -> Rand Level
 seedGeneration gen size =
-  [0..Vec.mag size]
-    |> foldr (\_ memo -> seedNextCell memo) ([], gen)
-    |> mapFst (Vector.fromList)
-    |> mapFst (Level size)
+  R.generate (Vec.mag size) gen
+    |> R.map Vector.fromList
+    |> R.map (Level size)
 
-seedNextCell :: ([Cell], Random.StdGen) -> ([Cell], Random.StdGen)
-seedNextCell (cells, gen) =
-  Random.random gen
-    |> mapFst (\cell -> cell : cells)
-
-advanceGeneration :: (Level, Random.StdGen) -> (Level, Random.StdGen)
+advanceGeneration :: Rand Level -> Rand Level
 advanceGeneration level =
   level

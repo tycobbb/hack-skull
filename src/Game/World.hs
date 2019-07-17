@@ -1,11 +1,12 @@
 module Game.World where
 
 -- external
-import qualified System.Random as Random
 import Data.Vector (Vector)
 
 -- internal
 import Core.Utils
+import qualified Core.Rand as R
+import Core.Rand (Rand, RandGen)
 import qualified Game.Vec as V
 import Game.Vec (Vec2)
 import qualified Game.Level as L
@@ -29,10 +30,10 @@ data Actor = Actor
 -- @param gen A random generator
 --
 -- @return The initial world state
-init :: Random.StdGen -> (World, Random.StdGen)
+init :: RandGen -> Rand World
 init gen =
   L.init gen (V.Vec2 30 20)
-    |> mapFst initWorld
+    |> R.map initWorld
 
 initWorld :: Level -> World
 initWorld level =
@@ -62,6 +63,6 @@ moveActor offset actor =
   }
 
 {- impls/queries -}
-size :: World -> Vec2
-size =
-  L.size . level
+width :: World -> Int
+width =
+  V.x . L.size . level
