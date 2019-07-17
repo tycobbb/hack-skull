@@ -99,10 +99,9 @@ drawGroundRow' level pos memo
 
 drawGroundTile :: Level -> Vec2 -> Tile
 drawGroundTile level pos =
-  if L.cell level pos then
-    floor pos
-  else
-    empty pos
+  case L.cell level pos of
+    L.On  -> floor pos
+    L.Off -> empty pos
 
 -- Draws a player
 drawPlayer :: Actor -> [Tile]

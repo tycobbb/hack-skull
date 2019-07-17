@@ -4,6 +4,7 @@ module Game.Level where
 import qualified Data.Tuple as Tuple
 import qualified Data.Vector as Vector
 import Data.Vector (Vector)
+import Debug.Trace
 
 -- internal
 import Core.Utils
@@ -13,11 +14,14 @@ import qualified Game.Vec as Vec
 import Game.Vec (Vec2)
 
 {- types -}
-type Cell  = Bool
 data Level = Level
   { size :: Vec2
   , grid :: Vector Cell
   }
+
+data Cell
+  = On
+  | Off
 
 {- impls -}
 -- Initializes a level.
@@ -40,9 +44,14 @@ cell level pos =
 {- impls/generation -}
 seedGeneration :: RandGen -> Vec2 -> Rand Level
 seedGeneration gen size =
-  R.generate (Vec.mag size) gen
+  R.generateR (0, 100) gen (Vec.mag size)
+    |> R.map (map seedCell)
     |> R.map Vector.fromList
     |> R.map (Level size)
+
+seedCell :: Int -> Cell
+seedCell sample =
+  if sample < 5 then On else Off
 
 advanceGeneration :: Rand Level -> Rand Level
 advanceGeneration level =

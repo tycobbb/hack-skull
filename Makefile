@@ -31,12 +31,12 @@ endif
 start: s/dev
 .PHONY: start
 
-## starts the dev server
+## starts the dev game
 s/dev:
 	@$(tools-stack) run
 .PHONY: s/dev
 
-## starts the dev server after a clean
+## starts the dev game after a clean
 s/dev/clean: b/clean s/dev
 .PHONY: s/dev/clean
 
