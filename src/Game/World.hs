@@ -46,6 +46,10 @@ initWorld level =
 -- Moves the player by the specified offset.
 --
 -- @param offset The delta to move the player by
+movePlayerR :: Vec2 -> Rand World -> Rand World
+movePlayerR offset =
+  R.map (movePlayer offset)
+
 movePlayer :: Vec2 -> World -> World
 movePlayer offset world =
   let
@@ -61,6 +65,14 @@ moveActor offset actor =
   actor
   { pos = (actor#pos) + offset
   }
+
+{- impls/commands/debug -}
+debugStepR :: Rand World -> Rand World
+debugStepR =
+  R.update
+    level
+    (\world level -> world { level = level })
+    L.stepR
 
 {- impls/queries -}
 width :: World -> Int

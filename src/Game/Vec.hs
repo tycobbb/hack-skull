@@ -42,6 +42,20 @@ contains pos size =
   (pos#y) >= 0 &&
   (pos#y) < (size#y)
 
+{- impls/conversion -}
+-- Converts a flat index to a vector.
+--
+-- @param scale The size of the vector space
+-- @param i     The flat index
+fromIndex :: Vec2 -> Int -> Vec2
+fromIndex scale i =
+  Vec2 (i `mod` scale#x) (i `div` scale#x)
+
+-- Converts a vector to a flat index
+toIndex :: Vec2 -> Vec2 -> Int
+toIndex scale vec =
+  vec#x + vec#y * scale#x
+
 {- impls/operators -}
 instance Num Vec2 where
   left + right  = Vec2 ((left#x) + (right#x)) ((left#y) + (right#y))

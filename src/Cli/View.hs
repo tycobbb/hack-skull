@@ -1,6 +1,7 @@
 module Cli.View where
 
 -- external
+import Debug.Trace
 import Prelude hiding (floor)
 import qualified Data.List.Split as Split
 
@@ -13,7 +14,7 @@ import Game.Vec (Vec2)
 import qualified Game.World as W
 import Game.World (World, Actor)
 import qualified Game.Level as L
-import Game.Level (Level)
+import Game.Level (Level, Cell)
 
 {- types -}
 data Tile = Tile
@@ -80,28 +81,18 @@ addLayer (t1 : top) (b1 : bot)
 -- Draws the ground
 drawGround :: Level -> [Tile]
 drawGround level =
-  drawGround' level (level#L.size) []
+  level
+    |> L.imap (drawGroundTile level)
 
-drawGround' :: Level -> Vec2 -> [Tile] -> [Tile]
-drawGround' level pos memo
-  | V.y pos == 1 = drawGroundRow level (pos - V.uy) ++ memo
-  | otherwise    = drawGround' level (pos - V.uy) ((drawGroundRow level (pos - V.uy)) ++ memo)
-
--- Draws a ground row
-drawGroundRow :: Level -> Vec2 -> [Tile]
-drawGroundRow level pos =
-  drawGroundRow' level pos []
-
-drawGroundRow' :: Level -> Vec2 -> [Tile] -> [Tile]
-drawGroundRow' level pos memo
-  | V.x pos == 1 = (drawGroundTile level (pos - V.ux)) : memo
-  | otherwise    = drawGroundRow' level (pos - V.ux) ((drawGroundTile level (pos - V.ux)) : memo)
-
-drawGroundTile :: Level -> Vec2 -> Tile
-drawGroundTile level pos =
-  case L.cell level pos of
-    L.On  -> floor pos
-    L.Off -> empty pos
+drawGroundTile :: Level -> Int -> Cell -> Tile
+drawGroundTile level i cell =
+  let
+    pos =
+      V.fromIndex (level#L.size) i
+  in
+    case cell of
+      L.On  -> floor pos
+      L.Off -> empty pos
 
 -- Draws a player
 drawPlayer :: Actor -> [Tile]

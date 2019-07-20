@@ -19,6 +19,7 @@ data Action
   | MoveDown
   | MoveLeft
   | MoveRight
+  | DebugStep
 
 {- impls -}
 -- Initializes the game.
@@ -39,16 +40,21 @@ init gen =
 -- @returns The next game state
 update :: Action -> Rand Game -> Rand Game
 update action =
+  R.update
+    world
+    (\game world -> game { world = world })
+    (updateWorld action)
+
+updateWorld :: Action -> Rand World -> Rand World
+updateWorld action =
   case action of
     MoveUp ->
-      updateWorld (W.movePlayer (-V.uy))
+      W.movePlayerR (-V.uy)
     MoveDown ->
-      updateWorld (W.movePlayer V.uy)
+      W.movePlayerR V.uy
     MoveLeft ->
-      updateWorld (W.movePlayer (-V.ux))
+      W.movePlayerR (-V.ux)
     MoveRight ->
-      updateWorld (W.movePlayer V.ux)
-
-updateWorld :: (World -> World) -> Rand Game -> Rand Game
-updateWorld fn =
-  R.map (\game -> game { world = fn (game#world) })
+      W.movePlayerR V.ux
+    DebugStep ->
+      W.debugStepR

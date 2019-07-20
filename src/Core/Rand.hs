@@ -14,16 +14,6 @@ type RandGen = Random.StdGen
 type Rand a = (a, RandGen)
 
 {- impls -}
--- Creates a new Rand by populating a list `size` values.
---
--- @param gen  The generator to use
--- @param size The size of the list
---
--- @return A list populated with random values
-generate :: (Random a, Bounded a) => RandGen -> Int -> Rand [a]
-generate =
-  generateR (minBound, maxBound)
-
 -- Creates a new Rand by populating a list with `size` values bounded
 -- by the range.
 --
@@ -32,8 +22,8 @@ generate =
 -- @param size  The size of the list
 --
 -- @return A list populated with random values
-generateR :: Random a => (a, a) -> RandGen -> Int -> Rand [a]
-generateR range gen size =
+generate :: Random a => (a, a) -> RandGen -> Int -> Rand [a]
+generate range gen size =
   let
     consNext (list, gen) =
       Random.randomR range gen
@@ -48,3 +38,15 @@ generateR range gen size =
 map :: (a -> b) -> Rand a -> Rand b
 map fn (value, gen) =
   (fn value, gen)
+
+-- Transforms a property of the Rand using the generator.
+--
+-- @param get The getter for the property
+-- @param set The setter for the property
+-- @param fn  The updater for the property
+update :: (a -> b) -> (a -> b -> a) -> (Rand b -> Rand b) -> Rand a -> Rand a
+update get set fn initial =
+  initial
+    |> Core.Rand.map get
+    |> fn
+    |> Core.Rand.map (set (fst initial))

@@ -7,13 +7,20 @@ help-column-width = 11
 tools-stack = stack
 
 # -- init --
-## initializes the dev environment
-init: init/pre init/base
+## initializes the environment
+init: init/pre init/base init/post
 .PHONY: init
 
+## installs hie (warning, slow)
+init/hie:
+ifeq ("$(shell command -v hie)", "")
+	cd tmp
+	git clone https://github.com/haskell/haskell-ide-engine --recursive
+	cd haskell-ide-engine && ./install.hs build-all
+endif
+.PHONY: init/dev
+
 # -- init/helpers
-# need to use global apollo for now, see:
-#	- https://github.com/apollographql/apollo-tooling/issues/881
 init/base:
 	brew bundle -v
 .PHONY: init/base
@@ -25,6 +32,14 @@ ifeq ("$(shell command -v brew)", "")
 	$(error 1)
 endif
 .PHONY: init/pre
+
+init/post:
+ifeq ("$(shell command -v hie)", "")
+	$(info ✘ hie not installed, to install the, run:)
+	$(info - make init/hie)
+	$(error 1)
+endif
+.PHONY: init/post
 
 # -- start --
 ## alias for s/dev

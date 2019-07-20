@@ -17,5 +17,6 @@ decode char =
     'j' -> Game Game.MoveDown
     'k' -> Game Game.MoveUp
     'l' -> Game Game.MoveRight
+    'd' -> Game Game.DebugStep
     'q' -> Quit
     _   -> Unknown
