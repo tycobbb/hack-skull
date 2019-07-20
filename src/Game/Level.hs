@@ -1,7 +1,5 @@
 module Game.Level where
 
-import Debug.Trace
-
 -- external
 import Prelude hiding (Left, Right)
 import qualified Data.Maybe as Maybe
@@ -76,13 +74,9 @@ imap fn level =
 seedR :: RandGen -> Vec2 -> Rand Level
 seedR gen size =
   R.generate (0, 100) gen (V.mag size)
-    |> R.map (map (seedCell 5)) -- 5%
+    |> R.map (map (sampleCell 1))
     |> R.map Vector.fromList
     |> R.map (Level size)
-
-seedCell :: Int -> Int -> Cell
-seedCell threshold sample =
-  if sample < threshold then On else Off
 
 {- impls/gen/step -}
 stepR :: Rand Level -> Rand Level
@@ -106,10 +100,19 @@ stepCellR level i (cell, gen) =
       V.fromIndex (level#size) i
     neighbors =
       findNeighbors level pos
+    numberOfNeighbors =
+      countNeighbors neighbors
   in
-    case cell of
-      On  -> (On, gen)
-      Off -> if (countNeighbors neighbors) >= 1 then (On, gen) else (Off, gen)
+    if cell == On then
+      (cell, gen)
+    else
+      R.random (0, 100) gen
+        |> R.map (sampleCell (15 * numberOfNeighbors))
+
+{- impls/gen/helpers -}
+sampleCell :: Int -> Int -> Cell
+sampleCell threshold sample =
+  if sample < threshold then On else Off
 
 {- impls/gen/neighbors -}
 findNeighbors :: Level -> Vec2 -> [Neighbor]

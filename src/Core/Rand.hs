@@ -32,6 +32,7 @@ generate range gen size =
     [0..size]
       |> foldr (\_ memo -> consNext memo) ([], gen)
 
+{- impls/commands -}
 -- Transforms the value in the Rand.
 --
 -- @param fn A function to transform the sequence value
@@ -50,3 +51,8 @@ update get set fn initial =
     |> Core.Rand.map get
     |> fn
     |> Core.Rand.map (set (fst initial))
+
+-- Alias for System.Random.randomR
+random :: Random.Random a => (a, a) -> RandGen -> Rand a
+random =
+  Random.randomR
