@@ -19,7 +19,7 @@ start = do
   IO.hSetEcho IO.stdin False
 
   -- start game loop
-  Random.setStdGen (Random.mkStdGen 5)
+  -- Random.setStdGen (Random.mkStdGen 5)
   gen <- Random.getStdGen
   G.init gen
     |> loop

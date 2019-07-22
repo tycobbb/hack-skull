@@ -71,7 +71,7 @@ debugStepR :: Rand World -> Rand World
 debugStepR =
   R.update
     level
-    (\world level -> world { level = level })
+    (\level world -> world { level = level })
     L.stepR
 
 {- impls/queries -}

@@ -42,7 +42,7 @@ update :: Action -> Rand Game -> Rand Game
 update action =
   R.update
     world
-    (\game world -> game { world = world })
+    (\world game -> game { world = world })
     (updateWorld action)
 
 updateWorld :: Action -> Rand World -> Rand World

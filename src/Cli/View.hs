@@ -14,7 +14,9 @@ import Game.Vec (Vec2)
 import qualified Game.World as W
 import Game.World (World, Actor)
 import qualified Game.Level as L
-import Game.Level (Level, Cell)
+import Game.Level (Level)
+import qualified Game.Cell as C
+import Game.Cell (Cell)
 
 {- types -}
 data Tile = Tile
@@ -91,8 +93,8 @@ drawGroundTile level i cell =
       V.fromIndex (level#L.size) i
   in
     case cell of
-      L.On  -> floor pos
-      L.Off -> empty pos
+      C.Floor _ -> floor pos
+      C.Empty   -> empty pos
 
 -- Draws a player
 drawPlayer :: Actor -> [Tile]

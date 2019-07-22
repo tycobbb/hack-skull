@@ -14,17 +14,14 @@ import qualified Core.Rand as R
 import Core.Rand (Rand, RandGen)
 import qualified Game.Vec as V
 import Game.Vec (Vec2)
+import qualified Game.Cell as C
+import Game.Cell (Cell(..), Room(..))
 
 {- types -}
 data Level = Level
   { size :: Vec2
   , grid :: Vector Cell
   }
-
-data Cell
-  = On
-  | Off
-  deriving (Eq, Show)
 
 data Direction
   = Up
@@ -47,8 +44,9 @@ data Neighbor = Neighbor
 --
 -- @return A new level
 init :: RandGen -> Vec2 -> Rand Level
-init =
-  seedR
+init gen size =
+  seedR gen size
+    |> repeatStepR 15
 
 {- impls/queries -}
 -- Gets the cell at the index
@@ -74,11 +72,25 @@ imap fn level =
 seedR :: RandGen -> Vec2 -> Rand Level
 seedR gen size =
   R.generate (0, 100) gen (V.mag size)
-    |> R.map (map (sampleCell 1))
-    |> R.map Vector.fromList
+    |> R.map (foldr (seedCell 1) ([], Room 0))
+    |> R.map (Vector.fromList . Tuple.fst)
     |> R.map (Level size)
 
+seedCell :: Int -> Int -> ([Cell], Room) -> ([Cell], Room)
+seedCell threshold sample (cells, room) =
+  if sample < threshold then
+    (Floor room : cells, Room (C.roomId room + 1))
+  else
+    (Empty : cells, room)
+
 {- impls/gen/step -}
+repeatStepR :: Int -> Rand Level -> Rand Level
+repeatStepR n value =
+  if n == 0 then
+    value
+  else
+    repeatStepR (n - 1) (stepR value)
+
 stepR :: Rand Level -> Rand Level
 stepR level =
   level
@@ -88,9 +100,9 @@ stepR level =
 stepGridR :: Rand Level -> Rand (Vector Cell)
 stepGridR (level, gen) =
   (level#grid)
-    |> Vector.ifoldr (\i cell (cells, gen) ->
-      stepCellR level i (cell, gen)
-        |> R.map (\cell -> cell : cells)) ([], gen)
+    |> Vector.ifoldr (\i cell cells ->
+      cells
+        |> R.join cell (:) (stepCellR level i)) ([], gen)
     |> R.map Vector.fromList
 
 stepCellR :: Level -> Int -> Rand Cell -> Rand Cell
@@ -103,16 +115,18 @@ stepCellR level i (cell, gen) =
     numberOfNeighbors =
       countNeighbors neighbors
   in
-    if cell == On then
+    if C.isOn cell then
       (cell, gen)
     else
       R.random (0, 100) gen
-        |> R.map (sampleCell (15 * numberOfNeighbors))
+        |> R.map (stepCell (15 * numberOfNeighbors) (Room 0))
 
-{- impls/gen/helpers -}
-sampleCell :: Int -> Int -> Cell
-sampleCell threshold sample =
-  if sample < threshold then On else Off
+stepCell :: Int -> Room -> Int -> Cell
+stepCell threshold room sample =
+  if sample < threshold then
+    Floor room
+  else
+    Empty
 
 {- impls/gen/neighbors -}
 findNeighbors :: Level -> Vec2 -> [Neighbor]
@@ -153,5 +167,5 @@ findNeighborPos origin dir =
 countNeighbors :: [Neighbor] -> Int
 countNeighbors neighbors =
   neighbors
-    |> filter (\neighbor -> cell neighbor == On )
+    |> filter (\neighbor -> C.isOn (cell neighbor) )
     |> List.length

@@ -35,22 +35,26 @@ generate range gen size =
 {- impls/commands -}
 -- Transforms the value in the Rand.
 --
--- @param fn A function to transform the sequence value
+-- @param transform A function to transform the sequence value
 map :: (a -> b) -> Rand a -> Rand b
-map fn (value, gen) =
-  (fn value, gen)
+map transform (value, gen) =
+  (transform value, gen)
 
 -- Transforms a property of the Rand using the generator.
 --
--- @param get The getter for the property
--- @param set The setter for the property
--- @param fn  The updater for the property
-update :: (a -> b) -> (a -> b -> a) -> (Rand b -> Rand b) -> Rand a -> Rand a
-update get set fn initial =
+-- @param get        The getter for the property
+-- @param set        The setter for the property
+-- @param transform  The updater for the property
+update :: (a -> b) -> (b -> a -> a) -> (Rand b -> Rand b) -> Rand a -> Rand a
+update get set transform initial =
   initial
     |> Core.Rand.map get
-    |> fn
-    |> Core.Rand.map (set (fst initial))
+    |> transform
+    |> Core.Rand.map ((flip set) (fst initial))
+
+join :: b -> (b -> a -> a) -> (Rand b -> Rand b) -> Rand a -> Rand a
+join next =
+  update (const next)
 
 -- Alias for System.Random.randomR
 random :: Random.Random a => (a, a) -> RandGen -> Rand a
