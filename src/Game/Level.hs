@@ -153,5 +153,5 @@ findNeighborPos origin dir =
 countNeighbors :: [Neighbor] -> Int
 countNeighbors neighbors =
   neighbors
-    |> filter (\neighbor -> C.isEmpty (cell neighbor) )
+    |> filter (not . C.isEmpty . cell)
     |> List.length
