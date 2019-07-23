@@ -11,7 +11,7 @@ import Data.Vector (Vector)
 -- internal
 import Core.Utils
 import qualified Core.Rand as R
-import Core.Rand (Rand, RandGen)
+import Core.Rand (Rand)
 import qualified Game.Vec as V
 import Game.Vec (Vec2)
 import qualified Game.Cell as C
@@ -39,14 +39,11 @@ data Neighbor = Neighbor
 {- impls -}
 -- Initializes a level.
 --
--- @param gen  A random generator
 -- @param size The bounding size of the level
---
--- @return A new level
-init :: RandGen -> Vec2 -> Rand Level
-init gen size =
-  seedR gen size
-    |> repeatStepR 15
+init :: Vec2 -> Rand Level
+init size =
+  seed size
+    >>= stepN 15
 
 {- impls/queries -}
 -- Gets the cell at the index
@@ -59,6 +56,11 @@ cellv :: Level -> Vec2 -> Cell
 cellv level pos =
   celli level (V.toIndex (level#size) pos)
 
+{- impls/setters -}
+setGrid :: Level -> Vector Cell -> Level
+setGrid level grid =
+  level { grid = grid }
+
 -- Transforms each cell in the level.
 --
 -- @param fn A transform that receives the index and cell.
@@ -69,64 +71,48 @@ imap fn level =
 
 {- impls/gen -}
 {- impls/gen/seed -}
-seedR :: RandGen -> Vec2 -> Rand Level
-seedR gen size =
-  R.generate (0, 100) gen (V.mag size)
-    |> R.map (foldr (seedCell 1) ([], Room 0))
-    |> R.map (Vector.fromList . Tuple.fst)
-    |> R.map (Level size)
-
-seedCell :: Int -> Int -> ([Cell], Room) -> ([Cell], Room)
-seedCell threshold sample (cells, room) =
-  if sample < threshold then
-    (Floor room : cells, Room (C.roomId room + 1))
-  else
-    (Empty : cells, room)
+seed :: Vec2 -> Rand Level
+seed size =
+  R.sampleN options (V.mag size)
+    |> fmap Vector.fromList
+    |> fmap (Level size)
+  where
+    options =
+      [ (1,  Floor (Room 0))
+      , (99, Empty)
+      ]
 
 {- impls/gen/step -}
-repeatStepR :: Int -> Rand Level -> Rand Level
-repeatStepR n value =
+stepN :: Int -> Level -> Rand Level
+stepN n level =
   if n == 0 then
-    value
+    pure level
   else
-    repeatStepR (n - 1) (stepR value)
+    step level
+      >>= stepN (n - 1)
 
-stepR :: Rand Level -> Rand Level
-stepR level =
+step :: Level -> Rand Level
+step level =
   level
-    |> stepGridR
-    |> R.map (\grid -> (Tuple.fst level) { grid = grid })
+    |> imap (stepCell level)
+    |> sequenceA
+    |> fmap Vector.fromList
+    |> fmap (setGrid level)
 
-stepGridR :: Rand Level -> Rand (Vector Cell)
-stepGridR (level, gen) =
-  (level#grid)
-    |> Vector.ifoldr (\i cell cells ->
-      cells
-        |> R.join cell (:) (stepCellR level i)) ([], gen)
-    |> R.map Vector.fromList
-
-stepCellR :: Level -> Int -> Rand Cell -> Rand Cell
-stepCellR level i (cell, gen) =
-  let
-    pos =
+stepCell :: Level -> Int -> Cell -> Rand Cell
+stepCell level i cell =
+  cell
+    |> C.thenA (R.sample options)
+  where
+    floorChance =
       V.fromIndex (level#size) i
-    neighbors =
-      findNeighbors level pos
-    numberOfNeighbors =
-      countNeighbors neighbors
-  in
-    if C.isOn cell then
-      (cell, gen)
-    else
-      R.random (0, 100) gen
-        |> R.map (stepCell (15 * numberOfNeighbors) (Room 0))
-
-stepCell :: Int -> Room -> Int -> Cell
-stepCell threshold room sample =
-  if sample < threshold then
-    Floor room
-  else
-    Empty
+        |> findNeighbors level
+        |> countNeighbors
+        |> (*15)
+    options =
+      [ (floorChance,       Floor (Room 0))
+      , (100 - floorChance, Empty)
+      ]
 
 {- impls/gen/neighbors -}
 findNeighbors :: Level -> Vec2 -> [Neighbor]
@@ -135,12 +121,12 @@ findNeighbors level pos =
     findNeighbor' =
       findNeighbor level pos
   in
-    [ findNeighbor' Up
-    , findNeighbor' Down
-    , findNeighbor' Left
-    , findNeighbor' Right
-    ]
-    |> Maybe.catMaybes
+    Maybe.catMaybes
+      [ findNeighbor' Up
+      , findNeighbor' Down
+      , findNeighbor' Left
+      , findNeighbor' Right
+      ]
 
 findNeighbor :: Level -> Vec2 -> Direction -> Maybe Neighbor
 findNeighbor level origin dir =
@@ -167,5 +153,5 @@ findNeighborPos origin dir =
 countNeighbors :: [Neighbor] -> Int
 countNeighbors neighbors =
   neighbors
-    |> filter (\neighbor -> C.isOn (cell neighbor) )
+    |> filter (\neighbor -> C.isEmpty (cell neighbor) )
     |> List.length

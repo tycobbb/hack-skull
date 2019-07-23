@@ -6,9 +6,9 @@ import Data.Vector (Vector)
 -- internal
 import Core.Utils
 import qualified Core.Rand as R
-import Core.Rand (Rand, RandGen)
+import Core.Rand (Rand)
 import qualified Game.Vec as V
-import Game.Vec (Vec2)
+import Game.Vec (Vec2(..))
 import qualified Game.Level as L
 import Game.Level (Level)
 
@@ -30,26 +30,23 @@ data Actor = Actor
 -- @param gen A random generator
 --
 -- @return The initial world state
-init :: RandGen -> Rand World
-init gen =
-  L.init gen (V.Vec2 30 20)
-    |> R.map initWorld
-
-initWorld :: Level -> World
-initWorld level =
+init :: Rand World
+init =
   World
-  { level = level
-  , player = Actor (V.Vec2 1 1)
-  }
+    <$> L.init (Vec2 30 20)
+    <*> pure (Actor (Vec2 1 1))
+
+{- impls/setters -}
+setLevel :: World -> Level -> World
+setLevel world level =
+  world
+    { level = level
+    }
 
 {- impls/commands -}
 -- Moves the player by the specified offset.
 --
 -- @param offset The delta to move the player by
-movePlayerR :: Vec2 -> Rand World -> Rand World
-movePlayerR offset =
-  R.map (movePlayer offset)
-
 movePlayer :: Vec2 -> World -> World
 movePlayer offset world =
   let
@@ -63,16 +60,14 @@ movePlayer offset world =
 moveActor :: Vec2 -> Actor -> Actor
 moveActor offset actor =
   actor
-  { pos = (actor#pos) + offset
-  }
+    { pos = (actor#pos) + offset
+    }
 
 {- impls/commands/debug -}
-debugStepR :: Rand World -> Rand World
-debugStepR =
-  R.update
-    level
-    (\level world -> world { level = level })
-    L.stepR
+debugStep :: World -> Rand World
+debugStep world =
+  L.step (world#level)
+    |> fmap (setLevel world)
 
 {- impls/queries -}
 width :: World -> Int

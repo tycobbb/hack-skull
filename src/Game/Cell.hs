@@ -11,9 +11,16 @@ newtype Room =
   deriving (Show)
 
 {- impls -}
-{- impls/queries -}
-isOn :: Cell -> Bool
-isOn cell =
+{- impls/commands -}
+thenA :: Applicative f => f Cell -> Cell -> f Cell
+thenA continuation cell =
   case cell of
-    Floor _ -> True
-    Empty   -> False
+    Empty -> continuation
+    _     -> pure cell
+
+{- impls/queries -}
+isEmpty :: Cell -> Bool
+isEmpty cell =
+  case cell of
+    Empty -> True
+    _     -> False

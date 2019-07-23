@@ -1,62 +1,94 @@
 module Core.Rand where
 
 -- external
-import qualified System.Random as Random
-import System.Random (Random)
+import qualified System.Random as R
+import qualified Data.List as List
+import qualified Data.Tuple as Tuple
+import Control.Applicative
 
 -- internal
 import Core.Utils
 
 {- types -}
--- A random generator
-type RandGen = Random.StdGen
--- A value and random generator pair
-type Rand a = (a, RandGen)
+newtype Rand a
+  = Rand (R.StdGen -> Value a)
+
+type Value a
+  = (R.StdGen, a)
+
+type Future a
+  = R.StdGen -> Value a
+
+type Probability a
+  = (Int, a)
 
 {- impls -}
--- Creates a new Rand by populating a list with `size` values bounded
--- by the range.
---
--- @param range The range to generate within
--- @param gen   The generator to use
--- @param size  The size of the list
---
--- @return A list populated with random values
-generate :: Random a => (a, a) -> RandGen -> Int -> Rand [a]
-generate range gen size =
-  let
-    consNext (list, gen) =
-      Random.randomR range gen
-        |> Core.Rand.map (\next -> next : list)
-  in
-    [0..size]
-      |> foldr (\_ memo -> consNext memo) ([], gen)
+{- impls/wrapping -}
+wrap :: Future a -> Rand a
+wrap =
+  Rand
+
+unwrap :: Rand a -> Future a
+unwrap (Rand fn) =
+  fn
+
+{- impls/queries -}
+value :: Value a -> a
+value =
+  Tuple.snd
 
 {- impls/commands -}
--- Transforms the value in the Rand.
---
--- @param transform A function to transform the sequence value
-map :: (a -> b) -> Rand a -> Rand b
-map transform (value, gen) =
-  (transform value, gen)
+call :: Rand a -> Future a
+call =
+  unwrap
 
--- Transforms a property of the Rand using the generator.
---
--- @param get        The getter for the property
--- @param set        The setter for the property
--- @param transform  The updater for the property
-update :: (a -> b) -> (b -> a -> a) -> (Rand b -> Rand b) -> Rand a -> Rand a
-update get set transform initial =
-  initial
-    |> Core.Rand.map get
-    |> transform
-    |> Core.Rand.map ((flip set) (fst initial))
+{- impls/monad -}
+-- i'm not sure how to write these in a nicer way
+instance Functor Rand where
+  fmap fn source =
+    wrap (fmap fn . unwrap source)
 
-join :: b -> (b -> a -> a) -> (Rand b -> Rand b) -> Rand a -> Rand a
-join next =
-  update (const next)
+instance Applicative Rand where
+  pure value =
+    wrap (\gen ->
+      (gen, value))
+  liftA2 fn xrand yrand =
+    wrap (\gen ->
+      call xrand gen
+        |> (\(gen', x) ->
+          call yrand gen'
+            |> fmap (fn x)))
 
--- Alias for System.Random.randomR
-random :: Random.Random a => (a, a) -> RandGen -> Rand a
-random =
-  Random.randomR
+instance Monad Rand where
+  (>>=) rand fn =
+    wrap (\gen ->
+      call rand gen
+        |> (\(gen', v) ->
+          call (fn v) gen'))
+
+{- impls/factories -}
+fromNative :: (R.StdGen -> (a, R.StdGen)) -> Rand a
+fromNative fn =
+  wrap (Tuple.swap . fn)
+
+sample :: [Probability a] -> Rand a
+sample [] =
+  error "Random.sample: empty list of options"
+sample options =
+  let
+    findTotal =
+      sum . fmap Tuple.fst
+    pickValue ((_, value) : []) roll =
+      value
+    pickValue ((chance, value) : options) roll
+      | roll < chance = value
+      | otherwise     = pickValue options (roll - chance)
+  in
+    R.randomR (0, findTotal options)
+      |> fromNative
+      |> fmap (pickValue options)
+
+sampleN :: [Probability a] -> Int -> Rand [a]
+sampleN options count =
+  replicate count (sample options)
+    |> sequenceA
