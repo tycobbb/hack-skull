@@ -51,6 +51,11 @@ s/dev:
 	@$(tools-stack) run
 .PHONY: s/dev
 
+## starts the dev game in debug
+s/dbg:
+	@$(tools-stack) run -- --debug
+.PHONY: s/dev
+
 ## starts the dev game after a clean
 s/dev/clean: b/clean s/dev
 .PHONY: s/dev/clean

@@ -7,8 +7,8 @@ data Cell
   deriving (Show)
 
 newtype Room =
-  Room { roomId :: Int }
-  deriving (Show)
+  Room Int
+  deriving (Show, Ord, Eq)
 
 {- impls -}
 {- impls/commands -}
@@ -24,3 +24,9 @@ isEmpty cell =
   case cell of
     Empty -> True
     _     -> False
+
+room :: Cell -> Maybe Room
+room cell =
+  case cell of
+    Floor room -> Just room
+    Empty      -> Nothing

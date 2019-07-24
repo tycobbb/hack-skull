@@ -3,6 +3,7 @@ module Cli where
 -- system
 import qualified System.IO as IO
 import qualified System.Random as Random
+import qualified System.Environment as Env
 import qualified Data.Tuple as Tuple
 
 -- internal
@@ -13,6 +14,8 @@ import qualified Game as G
 import Game (Game)
 import qualified Cli.View as V
 import qualified Cli.Action as A
+import qualified Cli.Config as C
+import Cli.Config (Config)
 
 {- impls -}
 start :: IO ()
@@ -20,19 +23,26 @@ start = do
   IO.hSetEcho IO.stdin False
   IO.hSetBuffering IO.stdin IO.NoBuffering
 
-  gen <- Random.getStdGen
-  G.init
-    |> loop gen
+  gen <-
+    Random.getStdGen
 
-loop :: Random.StdGen -> Rand Game -> IO ()
-loop gen rand = do
+  config <-
+    C.init <$> Env.getArgs
+
+  G.init
+    |> loop config gen
+
+loop :: Config -> Random.StdGen -> Rand Game -> IO ()
+loop config gen rand = do
   let
     (gen', game) =
       R.call rand gen
+    nextLoop =
+      loop config gen'
 
   -- show view
   game
-    |> V.render
+    |> V.render config
 
   -- get action from input
   action <-
@@ -44,10 +54,10 @@ loop gen rand = do
     A.Game action' ->
       game
         |> G.update action'
-        |> loop gen'
+        |> nextLoop
     A.Unknown ->
       game
         |> pure
-        |> loop gen'
+        |> nextLoop
     A.Quit -> do
       V.reset

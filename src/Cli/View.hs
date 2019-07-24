@@ -1,8 +1,8 @@
 module Cli.View where
 
 -- external
-import Debug.Trace
 import Prelude hiding (floor)
+import qualified Data.Char as Char
 import qualified Data.List.Split as Split
 
 -- internal
@@ -16,23 +16,15 @@ import Game.World (World, Actor)
 import qualified Game.Level as L
 import Game.Level (Level)
 import qualified Game.Cell as C
-import Game.Cell (Cell)
+import Game.Cell (Cell(..), Room(..))
+import qualified Cli.Config as Cfg
+import Cli.Config (Config)
 
 {- types -}
 data Tile = Tile
   { glyph :: Char
   , pos   :: Vec2
   }
-
-{- values -}
-empty :: Vec2 -> Tile
-empty = Tile ' '
-
-floor :: Vec2 -> Tile
-floor = Tile '.'
-
-human :: Vec2 -> Tile
-human = Tile '@'
 
 {- impls -}
 {- impls/commands -}
@@ -44,22 +36,22 @@ reset =
 -- Renders the game to string.
 --
 -- @param game The game to render
-render :: Game -> IO ()
-render game = do
+render :: Config -> Game -> IO ()
+render cfg game = do
   -- reset screen
   reset
   -- render world
   (game#G.world)
-    |> renderWorld
+    |> renderWorld cfg
     |> putStr
 
 -- Renders the world to string
 --
 -- @param world The world to render
-renderWorld :: World -> String
-renderWorld world =
-  drawGround (world#W.level)
-    |> addLayer (drawPlayer (world#W.player))
+renderWorld :: Config -> World -> String
+renderWorld cfg world =
+  drawGround cfg (world#W.level)
+    |> addLayer (drawPlayer cfg (world#W.player))
     |> map glyph
     |> Split.chunksOf (world#W.width)
     |> unlines
@@ -72,31 +64,51 @@ renderWorld world =
 --
 -- @return A merged tile layer
 addLayer :: [Tile] -> [Tile] -> [Tile]
-addLayer [] [] = []
-addLayer [] (b1 : bot) = b1 : addLayer [] bot
-addLayer (t1 : top) [] = t1 : addLayer top []
+addLayer [] [] =
+  []
+addLayer [] (b1 : bot) =
+  b1 : addLayer [] bot
+addLayer (t1 : top) [] =
+  t1 : addLayer top []
 addLayer (t1 : top) (b1 : bot)
   | pos t1 == pos b1 = t1 : addLayer top bot
   | null top         = b1 : addLayer [t1] bot
   | otherwise        = b1 : addLayer top bot
 
 -- Draws the ground
-drawGround :: Level -> [Tile]
-drawGround level =
+drawGround :: Config -> Level -> [Tile]
+drawGround cfg level =
   level
-    |> L.imap (drawGroundTile level)
+    |> L.imap (drawGroundTile cfg level)
 
-drawGroundTile :: Level -> Int -> Cell -> Tile
-drawGroundTile level i cell =
+drawGroundTile :: Config -> Level -> Int -> Cell -> Tile
+drawGroundTile cfg level i cell =
   let
     pos =
       V.fromIndex (level#L.size) i
   in
     case cell of
-      C.Floor _ -> floor pos
-      C.Empty   -> empty pos
+      Floor r -> floor cfg r pos
+      Empty   -> empty cfg pos
 
 -- Draws a player
-drawPlayer :: Actor -> [Tile]
-drawPlayer player =
-  [human (player#W.pos)]
+drawPlayer :: Config -> Actor -> [Tile]
+drawPlayer cfg player =
+  [ human cfg (player#W.pos)
+  ]
+
+{- impls/tiles -}
+empty :: Config -> Vec2 -> Tile
+empty _ =
+  Tile ' '
+
+floor :: Config -> Room -> Vec2 -> Tile
+floor cfg (Room roomId) =
+  if Cfg.debug cfg then
+    Tile (Char.intToDigit roomId)
+  else
+    Tile '.'
+
+human :: Config -> Vec2 -> Tile
+human _ =
+  Tile '@'

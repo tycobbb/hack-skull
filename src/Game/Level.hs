@@ -74,13 +74,30 @@ imap fn level =
 seed :: Vec2 -> Rand Level
 seed size =
   R.sampleN options (V.mag size)
+    |> fmap seedRooms
     |> fmap Vector.fromList
     |> fmap (Level size)
   where
     options =
-      [ (1,  Floor (Room 0))
-      , (99, Empty)
+      [ (1,  Floor . Room)
+      , (99, const Empty)
       ]
+
+seedRooms :: [Int -> Cell] -> [Cell]
+seedRooms cells =
+  cells
+    |> foldr seedRoom (0, [])
+    |> Tuple.snd
+
+seedRoom :: (Int -> Cell) -> (Int, [Cell]) -> (Int, [Cell])
+seedRoom addCell (roomId, cells) =
+  let
+    cell =
+      addCell roomId
+    nextId =
+      if C.isEmpty cell then roomId else roomId + 1
+  in
+    (nextId, cell : cells)
 
 {- impls/gen/step -}
 stepN :: Int -> Level -> Rand Level
@@ -104,13 +121,18 @@ stepCell level i cell =
   cell
     |> C.thenA (R.sample options)
   where
-    floorChance =
+    neighbors =
       V.fromIndex (level#size) i
         |> findNeighbors level
+    floorRoom =
+      neighbors
+        |> findNeighboringRoom
+    floorChance =
+      neighbors
         |> countNeighbors
         |> (*15)
     options =
-      [ (floorChance,       Floor (Room 0))
+      [ (floorChance,       Floor (Maybe.fromJust floorRoom))
       , (100 - floorChance, Empty)
       ]
 
@@ -155,3 +177,13 @@ countNeighbors neighbors =
   neighbors
     |> filter (not . C.isEmpty . cell)
     |> List.length
+
+findNeighboringRoom :: [Neighbor] -> Maybe Room
+findNeighboringRoom neighbors =
+  neighbors
+    |> fmap (C.room . cell)
+    |> Maybe.catMaybes
+    |> List.sort
+    |> List.group
+    |> List.maximumBy (\a b -> compare (List.length a) (List.length b))
+    |> Maybe.listToMaybe
