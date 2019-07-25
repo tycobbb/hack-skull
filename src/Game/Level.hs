@@ -126,7 +126,7 @@ stepCell level i cell =
         |> findNeighbors level
     floorRoom =
       neighbors
-        |> findNeighboringRoom
+        |> findMostCommonRoom
     floorChance =
       neighbors
         |> countNeighbors
@@ -178,12 +178,22 @@ countNeighbors neighbors =
     |> filter (not . C.isEmpty . cell)
     |> List.length
 
-findNeighboringRoom :: [Neighbor] -> Maybe Room
-findNeighboringRoom neighbors =
+findMostCommonRoom :: [Neighbor] -> Maybe Room
+findMostCommonRoom neighbors =
   neighbors
     |> fmap (C.room . cell)
     |> Maybe.catMaybes
     |> List.sort
-    |> List.group
-    |> List.maximumBy (\a b -> compare (List.length a) (List.length b))
-    |> Maybe.listToMaybe
+    |> foldr findMostCommonRoom' (Nothing, Nothing)
+    |> Tuple.snd
+    |> fmap Tuple.fst
+
+findMostCommonRoom' :: Room -> (Maybe (Room, Int), Maybe (Room, Int)) -> (Maybe (Room, Int), Maybe (Room, Int))
+findMostCommonRoom' room (Nothing, _) =
+  ( Just (room, 1)
+  , Just (room, 1)
+  )
+findMostCommonRoom' room (Just (curr, currF), Just (max, maxF))
+  | room /= curr, currF > maxF = (Just (room, 1), Just (curr, currF))
+  | room /= curr               = (Just (room, 1), Just (max, maxF))
+  | otherwise                  = (Just (curr, currF + 1), Just (max, maxF))
