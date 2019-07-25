@@ -1,40 +1,18 @@
 module Game.Level where
 
--- external
-import Prelude hiding (Left, Right)
-import qualified Data.Maybe as Maybe
-import qualified Data.Tuple as Tuple
-import qualified Data.List as List
-import qualified Data.Vector as Vector
-import Data.Vector (Vector)
-
 -- internal
-import Core.Utils
 import qualified Core.Rand as R
 import Core.Rand (Rand)
-import qualified Game.Vec as V
 import Game.Vec (Vec2)
-import qualified Game.Cell as C
-import Game.Cell (Cell(..), Room(..))
+import qualified Game.Level.Grid as G
+import Game.Level.Grid (Grid)
+import qualified Game.Level.Cell as C
+import Game.Level.Cell (Cell)
+import qualified Game.Level.Generate as Gen
 
 {- types -}
-data Level = Level
-  { size :: Vec2
-  , grid :: Vector Cell
-  }
-
-data Direction
-  = Up
-  | Down
-  | Left
-  | Right
-  deriving (Show)
-
-data Neighbor = Neighbor
-  { cell :: Cell
-  , dir  :: Direction
-  }
-  deriving (Show)
+newtype Level
+  = Level Grid
 
 {- impls -}
 -- Initializes a level.
@@ -42,158 +20,28 @@ data Neighbor = Neighbor
 -- @param size The bounding size of the level
 init :: Vec2 -> Rand Level
 init size =
-  seed size
-    >>= stepN 15
+  Level
+    <$> (Gen.seed size >>= Gen.stepN 15)
+
+{- impls/commands -}
+debugStep :: Level -> Rand Level
+debugStep (Level grid) =
+  Level
+    <$> Gen.step grid
 
 {- impls/queries -}
--- Gets the cell at the index
-celli :: Level -> Int -> Cell
-celli level i =
-  (level#grid) Vector.! i
+pos :: Level -> Int -> Vec2
+pos (Level grid) =
+  G.pos grid
 
--- Gets the cell at the position
-cellv :: Level -> Vec2 -> Cell
-cellv level pos =
-  celli level (V.toIndex (level#size) pos)
+width :: Level -> Int
+width (Level grid) =
+  G.width grid
 
-{- impls/setters -}
-setGrid :: Level -> Vector Cell -> Level
-setGrid level grid =
-  level { grid = grid }
+contains :: Level -> Vec2 -> Bool
+contains (Level grid) =
+  G.contains grid
 
--- Transforms each cell in the level.
---
--- @param fn A transform that receives the index and cell.
 imap :: (Int -> Cell -> a) -> Level -> [a]
-imap fn level =
-  (level#grid)
-    |> Vector.ifoldr (\i cell list -> fn i cell : list) []
-
-{- impls/gen -}
-{- impls/gen/seed -}
-seed :: Vec2 -> Rand Level
-seed size =
-  R.sampleN options (V.mag size)
-    |> fmap seedRooms
-    |> fmap Vector.fromList
-    |> fmap (Level size)
-  where
-    options =
-      [ (1,  Floor . Room)
-      , (99, const Empty)
-      ]
-
-seedRooms :: [Int -> Cell] -> [Cell]
-seedRooms cells =
-  cells
-    |> foldr seedRoom (0, [])
-    |> Tuple.snd
-
-seedRoom :: (Int -> Cell) -> (Int, [Cell]) -> (Int, [Cell])
-seedRoom addCell (roomId, cells) =
-  let
-    cell =
-      addCell roomId
-    nextId =
-      if C.isEmpty cell then roomId else roomId + 1
-  in
-    (nextId, cell : cells)
-
-{- impls/gen/step -}
-stepN :: Int -> Level -> Rand Level
-stepN n level =
-  if n == 0 then
-    pure level
-  else
-    step level
-      >>= stepN (n - 1)
-
-step :: Level -> Rand Level
-step level =
-  level
-    |> imap (stepCell level)
-    |> sequenceA
-    |> fmap Vector.fromList
-    |> fmap (setGrid level)
-
-stepCell :: Level -> Int -> Cell -> Rand Cell
-stepCell level i cell =
-  cell
-    |> C.thenA (R.sample options)
-  where
-    neighbors =
-      V.fromIndex (level#size) i
-        |> findNeighbors level
-    floorRoom =
-      neighbors
-        |> findMostCommonRoom
-    floorChance =
-      neighbors
-        |> countNeighbors
-        |> (*15)
-    options =
-      [ (floorChance,       Floor (Maybe.fromJust floorRoom))
-      , (100 - floorChance, Empty)
-      ]
-
-{- impls/gen/neighbors -}
-findNeighbors :: Level -> Vec2 -> [Neighbor]
-findNeighbors level pos =
-  let
-    findNeighbor' =
-      findNeighbor level pos
-  in
-    Maybe.catMaybes
-      [ findNeighbor' Up
-      , findNeighbor' Down
-      , findNeighbor' Left
-      , findNeighbor' Right
-      ]
-
-findNeighbor :: Level -> Vec2 -> Direction -> Maybe Neighbor
-findNeighbor level origin dir =
-  let
-    pos =
-      findNeighborPos origin dir
-  in
-    if not (V.contains pos (level#size)) then
-      Nothing
-    else
-      Just Neighbor
-        { cell = (cellv level pos)
-        , dir  = dir
-        }
-
-findNeighborPos :: Vec2 -> Direction -> Vec2
-findNeighborPos origin dir =
-  case dir :: Direction of
-    Up    -> origin + V.uy
-    Down  -> origin - V.uy
-    Left  -> origin - V.ux
-    Right -> origin + V.ux
-
-countNeighbors :: [Neighbor] -> Int
-countNeighbors neighbors =
-  neighbors
-    |> filter (not . C.isEmpty . cell)
-    |> List.length
-
-findMostCommonRoom :: [Neighbor] -> Maybe Room
-findMostCommonRoom neighbors =
-  neighbors
-    |> fmap (C.room . cell)
-    |> Maybe.catMaybes
-    |> List.sort
-    |> foldr findMostCommonRoom' (Nothing, Nothing)
-    |> Tuple.snd
-    |> fmap Tuple.fst
-
-findMostCommonRoom' :: Room -> (Maybe (Room, Int), Maybe (Room, Int)) -> (Maybe (Room, Int), Maybe (Room, Int))
-findMostCommonRoom' room (Nothing, _) =
-  ( Just (room, 1)
-  , Just (room, 1)
-  )
-findMostCommonRoom' room (Just (curr, currF), Just (max, maxF))
-  | room /= curr, currF > maxF = (Just (room, 1), Just (curr, currF))
-  | room /= curr               = (Just (room, 1), Just (max, maxF))
-  | otherwise                  = (Just (curr, currF + 1), Just (max, maxF))
+imap fn (Level grid) =
+  G.imap fn grid

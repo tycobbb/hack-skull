@@ -52,7 +52,7 @@ movePlayer offset world =
   let
     moved = moveActor offset (world#player)
   in
-    if V.contains (moved#pos) (world#level#L.size) then
+    if L.contains (world#level) (moved#pos) then
       world { player = moved }
     else
       world
@@ -66,10 +66,10 @@ moveActor offset actor =
 {- impls/commands/debug -}
 debugStep :: World -> Rand World
 debugStep world =
-  L.step (world#level)
+  L.debugStep (world#level)
     |> fmap (setLevel world)
 
 {- impls/queries -}
 width :: World -> Int
 width =
-  V.x . L.size . level
+  L.width . level

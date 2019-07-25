@@ -36,7 +36,7 @@ mag vec =
 
 -- Determines if the position vector is within the size.
 contains :: Vec2 -> Vec2 -> Bool
-contains pos size =
+contains size pos =
   (pos#x) >= 0 &&
   (pos#x) < (size#x) &&
   (pos#y) >= 0 &&

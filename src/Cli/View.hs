@@ -15,8 +15,8 @@ import qualified Game.World as W
 import Game.World (World, Actor)
 import qualified Game.Level as L
 import Game.Level (Level)
-import qualified Game.Cell as C
-import Game.Cell (Cell(..), Room(..))
+import qualified Game.Level.Cell as C
+import Game.Level.Cell (Cell(..), Room(..))
 import qualified Cli.Config as Cfg
 import Cli.Config (Config)
 
@@ -85,7 +85,7 @@ drawGroundTile :: Config -> Level -> Int -> Cell -> Tile
 drawGroundTile cfg level i cell =
   let
     pos =
-      V.fromIndex (level#L.size) i
+      L.pos level i
   in
     case cell of
       Floor r -> floor cfg r pos

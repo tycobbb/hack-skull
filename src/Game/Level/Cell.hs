@@ -1,4 +1,4 @@
-module Game.Cell where
+module Game.Level.Cell where
 
 {- types -}
 data Cell
