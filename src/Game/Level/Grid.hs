@@ -3,6 +3,7 @@ module Game.Level.Grid where
 -- external
 import qualified Data.Vector as Vector
 import Data.Vector (Vector)
+import Data.Coerce (Coercible, coerce)
 
 -- internal
 import Core.Utils
@@ -17,39 +18,46 @@ data Grid = Grid
   , cells :: Vector Cell
   }
 
+class GridLike a where
+  grid :: a -> Grid
+
 {- impls -}
+{- impls/queryable -}
+instance GridLike Grid where
+  grid = id
+
 {- impls/queries -}
 -- Gets the position from a flat index
-pos :: Grid -> Int -> Vec2
-pos grid =
-  V.fromIndex (grid#size)
+pos :: GridLike a => a -> Int -> Vec2
+pos q =
+  V.fromIndex (q#grid#size)
 
 -- Gets the cell at the index
-celli :: Grid -> Int -> Cell
-celli grid i =
-  (grid#cells) Vector.! i
+celli :: GridLike a => a -> Int -> Cell
+celli q i =
+  (q#grid#cells) Vector.! i
 
 -- Gets the cell at the position
-cellv :: Grid -> Vec2 -> Cell
-cellv grid pos =
-  celli grid (V.toIndex (grid#size) pos)
+cellv :: GridLike a => a -> Vec2 -> Cell
+cellv q pos =
+  celli q (V.toIndex (q#grid#size) pos)
 
 -- Gets the width of the grid
-width :: Grid -> Int
+width :: GridLike a => a -> Int
 width =
-  V.x . size
+  V.x . size . grid
 
 -- Checks if the grid contains the pos
-contains :: Grid -> Vec2 -> Bool
-contains grid =
-  V.contains (grid#size)
+contains :: GridLike a => a -> Vec2 -> Bool
+contains q =
+  V.contains (q#grid#size)
 
 -- Transforms each cell in the grid.
 --
 -- @param fn A transform that receives the index and cell.
-imap :: (Int -> Cell -> a) -> Grid -> [a]
-imap fn grid =
-  (grid#cells)
+imap :: GridLike a => (Int -> Cell -> b) -> a -> [b]
+imap fn q =
+  (q#grid#cells)
     |> Vector.ifoldr (\i cell list -> fn i cell : list) []
 
 {- impls/setters -}

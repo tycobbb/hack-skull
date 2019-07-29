@@ -1,5 +1,8 @@
 module Game.Level where
 
+-- external
+import Data.Coerce
+
 -- internal
 import qualified Core.Rand as R
 import Core.Rand (Rand)
@@ -29,19 +32,6 @@ debugStep (Level grid) =
   Level
     <$> Gen.step grid
 
-{- impls/queries -}
-pos :: Level -> Int -> Vec2
-pos (Level grid) =
-  G.pos grid
-
-width :: Level -> Int
-width (Level grid) =
-  G.width grid
-
-contains :: Level -> Vec2 -> Bool
-contains (Level grid) =
-  G.contains grid
-
-imap :: (Int -> Cell -> a) -> Level -> [a]
-imap fn (Level grid) =
-  G.imap fn grid
+{- impls/gridlike -}
+instance G.GridLike Level where
+  grid = coerce

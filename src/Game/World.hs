@@ -10,6 +10,7 @@ import Core.Rand (Rand)
 import qualified Game.Vec as V
 import Game.Vec (Vec2(..))
 import qualified Game.Level as L
+import qualified Game.Level.Grid as LG
 import Game.Level (Level)
 
 {- types -}
@@ -52,7 +53,7 @@ movePlayer offset world =
   let
     moved = moveActor offset (world#player)
   in
-    if L.contains (world#level) (moved#pos) then
+    if LG.contains (world#level) (moved#pos) then
       world { player = moved }
     else
       world
@@ -68,8 +69,3 @@ debugStep :: World -> Rand World
 debugStep world =
   L.debugStep (world#level)
     |> fmap (setLevel world)
-
-{- impls/queries -}
-width :: World -> Int
-width =
-  L.width . level

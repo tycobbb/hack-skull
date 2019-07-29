@@ -14,6 +14,7 @@ import Game.Vec (Vec2)
 import qualified Game.World as W
 import Game.World (World, Actor)
 import qualified Game.Level as L
+import qualified Game.Level.Grid as LG
 import Game.Level (Level)
 import qualified Game.Level.Cell as C
 import Game.Level.Cell (Cell(..), Room(..))
@@ -53,7 +54,7 @@ renderWorld cfg world =
   drawGround cfg (world#W.level)
     |> addLayer (drawPlayer cfg (world#W.player))
     |> map glyph
-    |> Split.chunksOf (world#W.width)
+    |> Split.chunksOf (world#W.level#LG.width)
     |> unlines
 
 -- Merges two tile layers. The top tile layer will overwrite any tiles at a
@@ -79,13 +80,13 @@ addLayer (t1 : top) (b1 : bot)
 drawGround :: Config -> Level -> [Tile]
 drawGround cfg level =
   level
-    |> L.imap (drawGroundTile cfg level)
+    |> LG.imap (drawGroundTile cfg level)
 
 drawGroundTile :: Config -> Level -> Int -> Cell -> Tile
 drawGroundTile cfg level i cell =
   let
     pos =
-      L.pos level i
+      LG.pos level i
   in
     case cell of
       Floor r -> floor cfg r pos
