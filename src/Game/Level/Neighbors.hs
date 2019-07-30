@@ -2,6 +2,7 @@ module Game.Level.Neighbors where
 
 -- external
 import Prelude hiding (Left, Right)
+import Data.Functor
 import qualified Data.Maybe as Maybe
 import qualified Data.Tuple as Tuple
 import qualified Data.List as List
@@ -9,7 +10,7 @@ import qualified Data.Vector as Vector
 import Data.Vector (Vector)
 
 -- internal
-import Core.Utils
+import Core.Extra
 import qualified Core.Rand as R
 import Core.Rand (Rand)
 import qualified Game.Vec as V
@@ -80,12 +81,12 @@ count neighbors =
 mostCommonRoom :: [Neighbor] -> Maybe Room
 mostCommonRoom neighbors =
   neighbors
-    |> fmap (C.room . cell)
-    |> Maybe.catMaybes
-    |> List.sort
-    |> foldr mostCommonRoom' (Nothing, Nothing)
-    |> Tuple.snd
-    |> fmap Tuple.fst
+    ||> fmap (C.room . cell)
+    ||> Maybe.catMaybes
+    ||> List.sort
+    ||> foldr mostCommonRoom' (Nothing, Nothing)
+    ||> Tuple.snd
+    <&> Tuple.fst
 
 mostCommonRoom' :: Room -> (Maybe (Room, Int), Maybe (Room, Int)) -> (Maybe (Room, Int), Maybe (Room, Int))
 mostCommonRoom' room (Nothing, _) =

@@ -1,7 +1,10 @@
 module Game where
 
+-- external
+import Data.Functor
+
 -- internal
-import Core.Utils
+import Core.Extra
 import qualified Core.Rand as R
 import Core.Rand (Rand)
 import qualified Game.World as W
@@ -49,8 +52,8 @@ setWorld game world =
 update :: Action -> Game -> Rand Game
 update action game =
   (game#world)
-    |> updateWorld action
-    |> fmap (setWorld game)
+    ||> updateWorld action
+    <&> setWorld game
   where
     updateWorld action =
       case action of

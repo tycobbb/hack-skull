@@ -6,7 +6,7 @@ import Data.Vector (Vector)
 import Data.Coerce (Coercible, coerce)
 
 -- internal
-import Core.Utils
+import Core.Extra
 import qualified Game.Vec as V
 import Game.Vec (Vec2)
 import qualified Game.Level.Cell as C

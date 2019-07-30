@@ -1,7 +1,7 @@
 module Game.Vec where
 
 -- internal
-import Core.Utils
+import Core.Extra
 
 {- types -}
 -- A 2D coordinate

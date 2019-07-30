@@ -2,12 +2,13 @@ module Core.Rand where
 
 -- external
 import qualified System.Random as R
+import Data.Functor
 import qualified Data.List as List
 import qualified Data.Tuple as Tuple
 import Control.Applicative
 
 -- internal
-import Core.Utils
+import Core.Extra
 
 {- types -}
 newtype Rand a
@@ -85,8 +86,8 @@ sample options =
       | otherwise     = pickValue options (roll - chance)
   in
     R.randomR (0, findTotal options)
-      |> fromNative
-      |> fmap (pickValue options)
+      ||> fromNative
+      <&> pickValue options
 
 sampleN :: [Probability a] -> Int -> Rand [a]
 sampleN options count =

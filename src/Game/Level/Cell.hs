@@ -3,6 +3,8 @@ module Game.Level.Cell where
 {- types -}
 data Cell
   = Floor Room
+  | DoorIn Room
+  | DoorOut Room
   | Empty
   deriving (Show)
 

@@ -1,10 +1,11 @@
 module Game.World where
 
 -- external
+import Data.Functor
 import Data.Vector (Vector)
 
 -- internal
-import Core.Utils
+import Core.Extra
 import qualified Core.Rand as R
 import Core.Rand (Rand)
 import qualified Game.Vec as V
@@ -68,4 +69,4 @@ moveActor offset actor =
 debugStep :: World -> Rand World
 debugStep world =
   L.debugStep (world#level)
-    |> fmap (setLevel world)
+    <&> setLevel world

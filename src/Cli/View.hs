@@ -6,7 +6,7 @@ import qualified Data.Char as Char
 import qualified Data.List.Split as Split
 
 -- internal
-import Core.Utils
+import Core.Extra
 import qualified Game as G
 import Game (Game)
 import qualified Game.Vec as V

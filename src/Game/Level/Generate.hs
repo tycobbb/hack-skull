@@ -1,15 +1,16 @@
 module Game.Level.Generate where
 
 -- external
-import Prelude hiding (Left, Right)
+import Data.Functor
 import qualified Data.Maybe as Maybe
 import qualified Data.Tuple as Tuple
 import qualified Data.List as List
 import qualified Data.Vector as Vector
 import Data.Vector (Vector)
+import Control.Monad
 
 -- internal
-import Core.Utils
+import Core.Extra
 import qualified Core.Rand as R
 import Core.Rand (Rand)
 import qualified Game.Vec as V
@@ -30,9 +31,9 @@ resolve size =
 seed :: Vec2 -> Rand Grid
 seed size =
   R.sampleN options (V.mag size)
-    |> fmap seedRooms
-    |> fmap Vector.fromList
-    |> fmap (Grid size)
+    <&> seedRooms
+    <&> Vector.fromList
+    <&> Grid size
   where
     options =
       [ (1,  Floor . Room)
@@ -40,10 +41,8 @@ seed size =
       ]
 
 seedRooms :: [Int -> Cell] -> [Cell]
-seedRooms cells =
-  cells
-    |> foldr seedRoom (0, [])
-    |> Tuple.snd
+seedRooms =
+  Tuple.snd . foldr seedRoom (0, [])
 
 seedRoom :: (Int -> Cell) -> (Int, [Cell]) -> (Int, [Cell])
 seedRoom addCell (roomId, cells) =
@@ -57,20 +56,18 @@ seedRoom addCell (roomId, cells) =
 
 {- impls/gen/step -}
 stepN :: Int -> Grid -> Rand Grid
-stepN n grid =
-  if n == 0 then
-    pure grid
-  else
-    step grid
-      >>= stepN (n - 1)
+stepN n =
+  step
+    >=> stepN (n - 1)
+    ||> whenM (n /= 0)
 
 step :: Grid -> Rand Grid
 step grid =
   grid
-    |> G.imap (stepCell grid)
-    |> sequenceA
-    |> fmap Vector.fromList
-    |> fmap (G.setCells grid)
+    ||> G.imap (stepCell grid)
+    ||> sequenceA
+    <&> Vector.fromList
+    <&> G.setCells grid
 
 stepCell :: Grid -> Int -> Cell -> Rand Cell
 stepCell grid i cell =

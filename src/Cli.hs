@@ -7,7 +7,7 @@ import qualified System.Environment as Env
 import qualified Data.Tuple as Tuple
 
 -- internal
-import Core.Utils
+import Core.Extra
 import qualified Core.Rand as R
 import Core.Rand (Rand)
 import qualified Game as G
